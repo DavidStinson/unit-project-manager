@@ -8,6 +8,7 @@ router.get('/unit-one', isLoggedIn, buildCtrl.unitOne)
 router.get('/unit-two', isLoggedIn, buildCtrl.unitTwo)
 router.get('/unit-three', isLoggedIn, buildCtrl.unitThree)
 router.get('/unit-four', isLoggedIn, buildCtrl.unitFour)
+router.get('/unit-four-be-fe', isLoggedIn, buildCtrl.unitFourBeFe)
 
 export {
   router

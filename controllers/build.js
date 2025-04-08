@@ -271,7 +271,7 @@ async function unitFour(req, res) {
     const sheets = google.sheets({ version: 'v4', auth: req.googleOAuthClient })
     const drive = google.drive({ version: 'v3', auth: req.googleOAuthClient })
     req.body.dataSourceSpreadsheet =
-      '1q49IN8HHF-H9Rr238wJLFRlKZlxvR7hUMGHcKmsKtck/'
+      '1XjGBGo3oXQVcU-YiqUqYURSWFcZD-It6AXJrCotTjs0'
     req.body.range = req.body.range ? req.body.range : 'ProjectDetails'
     const sourceData = await gSheetsHelpers.getRangeValuesFromSpreadsheet(
       sheets,
@@ -281,7 +281,7 @@ async function unitFour(req, res) {
     for (const row of sourceData) {
       await backOff(
         async () => {
-          req.body.templateSpreadsheet = "1TBhf46Ofya3ZPuzmtaSvp4uJTpilsGkcm976Hnf5JxI"
+          req.body.templateSpreadsheet = "1-XWBjhNE9KMxoYg0iHC1m14i_g4_STGV-jrCNFQRnRU"
           const templateSpreadsheet = await gSheetsHelpers.getSpreadsheet(
             sheets,
             req.body.templateSpreadsheet
@@ -310,6 +310,91 @@ async function unitFour(req, res) {
             {
               range: 'DeploymentLink',
               values: [[row[3]]],
+            },
+          ]
+          await gSheetsHelpers.batchUpdateSpreadsheet(
+            sheets,
+            newSpreadsheetId,
+            dataToFill
+          )
+        },
+        {
+          maxDelay: 64000,
+          retry: function (error, attemptNumber) {
+            console.error(
+              `a backoff error occurred on attempt number ${attemptNumber}:`,
+              error
+            )
+            return true
+          },
+        }
+      )
+    }
+    res.redirect('/')
+  } catch (error) {
+    if (error.response?.data) {
+      const apiError = error.response
+      console.error(apiError)
+      console.error('THE API ERROR:', apiError.data?.error?.errors)
+      if (apiError.data.error.code === 404) {
+        console.error('While looking for this resource:', apiError.config.url)
+        console.error('Ensure you provided the correct values.')
+      }
+    } else {
+      console.error('THIS ERROR WAS THROWN:', error)
+    }
+    res.redirect('/')
+  }
+}
+
+async function unitFourBeFe(req, res) {
+  try {
+    const sheets = google.sheets({ version: 'v4', auth: req.googleOAuthClient })
+    const drive = google.drive({ version: 'v3', auth: req.googleOAuthClient })
+    req.body.dataSourceSpreadsheet =
+      '19e5gzKs0UDYJ04nte__JJko0DlM9UG5NxTACv-aunqA'
+    req.body.range = req.body.range ? req.body.range : 'ProjectDetails'
+    const sourceData = await gSheetsHelpers.getRangeValuesFromSpreadsheet(
+      sheets,
+      req.body.dataSourceSpreadsheet,
+      req.body.range
+    )
+    for (const row of sourceData) {
+      await backOff(
+        async () => {
+          req.body.templateSpreadsheet = "1V8qx3UbrtfrFQAEl8FXNXssIfiJCPnXdLiCFbkEvHGs"
+          const templateSpreadsheet = await gSheetsHelpers.getSpreadsheet(
+            sheets,
+            req.body.templateSpreadsheet
+          )
+          const newSpreadsheetTitle = `${row[0]} - ${templateSpreadsheet.properties.title}`
+          const newFile = await gDriveHelpers.copyFileInPlace(
+            drive,
+            req.body.templateSpreadsheet,
+            newSpreadsheetTitle
+          )
+          const newSpreadsheetId = newFile.data.id
+          console.log('🚀 nSId/title', newSpreadsheetId, newSpreadsheetTitle)
+          const dataToFill = [
+            {
+              range: 'StudentName',
+              values: [[row[0]]],
+            },
+            {
+              range: 'ProjectName',
+              values: [[row[1]]]
+            },
+            {
+              range: 'GitHubFELink',
+              values: [[row[2]]],
+            },
+            {
+              range: 'GitHubBELink',
+              values: [[row[3]]],
+            },
+            {
+              range: 'DeploymentLink',
+              values: [[row[4]]],
             },
           ]
           await gSheetsHelpers.batchUpdateSpreadsheet(
@@ -549,4 +634,4 @@ async function unitFour(req, res) {
 //   }
 // }
 
-export { unitOne, unitTwo, unitThree, unitFour }
+export { unitOne, unitTwo, unitThree, unitFour, unitFourBeFe }
